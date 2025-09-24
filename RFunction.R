@@ -1,9 +1,9 @@
-library('move')
+library('move2')
 library(sf)
 library(ggplot2)
 library(tidyverse)
 
-# data <- readRDS("./data/raw/input_work_hebb.rds")
+ data <- readRDS("./data/raw/Yahatinda_move2.rds")
 # 
   
 rFunction = function(data, polygon = NULL) {
@@ -11,8 +11,20 @@ rFunction = function(data, polygon = NULL) {
   polygon_boundary <- read_sf(paste0(getAppFilePath("polygon"),"polygon_boundary.shp"))
   
   ##transform the data into data-frame and sf files
-  data_df <-as.data.frame(data)
-  data_sf <- st_as_sf(data_df, coords = c("location.long", "location.lat"), crs = st_crs(4326))
+  coords <- sf::st_coordinates(data)
+  original_track_id_column <- mt_track_id_column(data)
+
+  data_df <- data |>
+    mutate(
+      location_long = coords[, 1],
+      location_lat = coords[, 2],
+      trackId = original_track_id_column
+    ) |>
+    as.data.frame()
+
+  #data_df <-as.data.frame(data)
+  data_sf <- st_as_sf(data_df, coords = c("location_long", "location_lat"), 
+  crs = st_crs(4326))
   
   trck_data <- data_sf %>% 
     group_by(trackId) %>%
@@ -59,10 +71,19 @@ rFunction = function(data, polygon = NULL) {
          height = 6, width = 9, units = "in", dpi = 300)
   
   ## converts the data-frame to movestack
-  final_dat <- move(x= as.numeric(data_df$location.long), y = as.numeric(data_df$location.lat),
-                    time = as.POSIXct(data_df$timestamp, format = "%Y-%m-%d %H:%M:%S"),
-                    data = data_df, proj = CRS("+proj=longlat +ellps=WGS84"), 
-                    animal = data_df$trackId)
+  mt_as_move2(
+    data_df,
+      coords = c("location_long", "location_lat"),
+      time_column = "timestamp",
+      crs = 4326,
+      track_id_column = original_track_id_column,
+      track_attributes = names(track_attributes)
+    )
+   
+##    final_dat <- move(x= as.numeric(data_df$location.long), y = as.numeric(data_df$location.lat),
+##                   time = as.POSIXct(data_df$timestamp, format = "%Y-%m-%d %H:%M:%S"),
+##                    data = data_df, proj = CRS("+proj=longlat +ellps=WGS84"), 
+##                    animal = data_df$trackId)
   }
   return(final_dat)
  }
