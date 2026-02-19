@@ -1,16 +1,32 @@
 {
+  "version": "1.2",
   "settings": [
     {
       "id": "polygon",
       "name": "polygon files",
       "description": "You can upload local files for running the resource selection function analysis. Make sure that they overlap with the tracking data set and are in WGS 84 projection! The App requires the following files, named exactly as given: 1. `polygon_boundary.cpg`, 2. `polygon_boundary.dbf`, 3. `polygon_boundary.prj`, 4. `polygon_boundary.shp`, 5. `polygon_boundary.shx`. Note that fallback protected area polygon file of Y2Y region is provided",
-      "type": "LOCAL_FILE"
-    } 
+       "type": "USER_FILE"
+    },
+    {
+  "id": "y2y",
+  "name": "Y2Y protected area",
+  "description": "If you do not upload a polygon file, you can use the provided fallback protected-area layer from the Y2Y (Yellowstone to Yukon) region. Y2Y is a conservation corridor in western North America spanning from Greater Yellowstone (USA) to the Yukon (Canada).",
+  "defaultValue": "yes",
+  "type": "RADIOBUTTONS",
+  "options": [{
+      "value": "yes",
+      "displayText": "Yes"
+    },
+    {
+      "value": "no",
+      "displayText": "No"
+    }]
+}
     ],
      "providedAppFiles": [
     {
       "settingId": "polygon",
-      "from": "provided-app-files/polygon/"
+      "from": "data/auxiliary/user-files/provided-app-files/polygon/"
     }
   ],
   "dependencies": {
@@ -30,15 +46,14 @@
     ]
   },
   "createsArtifacts": true,
+  
   "license": {
     "key": "MIT"
   },
   "language": "eng",
   "keywords": [
-    "filtering",
-    "protected-area",
-    "movement modelling",
-    "animal movement"
+    "example",
+    "template"
   ],
   "people": [
     {
@@ -50,15 +65,22 @@
       "orcid": "0000-0002-7932-0191",
       "affiliation": "University of Minnesota",
       "affiliationRor": ""
+    },
+    {
+      "firstName": "Nafiseh",
+      "middleInitials": null,
+      "lastName": "Tavakol",
+      "email": "ntavakol@ab.mpg.de",
+      "roles": ["contributor"],
+      "orcid": "0000-0003-3674-4784",
+      "affiliation": "Max-Planck-Institute of Animal Behavior",
+      "affiliationRor": "https://ror.org/026stee22"
     }
-		
   ],
+  
   "funding": [
     {
 	"name": "NASA MoveApps Project"
 	}
-  ],
-  "documentation" : {
-    "url": "https://github.com/nilanjanchatterjee/Geofence/blob/master/README.md"
-  }
+  ]
 }

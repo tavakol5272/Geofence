@@ -2,4 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-data/output
+.DS_Store
+.idea/
+data/output/**
+!data/output/.keep
+tests/testthat/plot.png
