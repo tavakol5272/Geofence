@@ -6,4 +6,7 @@
 .idea/
 data/output/**
 !data/output/.keep
-tests/testthat/plot.png
+.cache/
+.config/
+.local/
+shiny_bookmarks/

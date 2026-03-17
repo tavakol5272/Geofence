@@ -35,13 +35,22 @@
         "name": "sf"
       },
       {
-        "name": "ggplot2"
+        "name": "shiny"
       },
       {
         "name": "move2"        
       },
       {
-        "name": "tidyverse"
+        "name": "htmlwidgets"
+      },
+      {
+        "name": "leaflet"
+      },
+      {
+        "name": "leaflet.extras"
+      },
+      {
+        "name": "webshot2"
       }
     ]
   },

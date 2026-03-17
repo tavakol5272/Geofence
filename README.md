@@ -51,9 +51,12 @@ The App should work for any kind of (location) data.
 *Example:* `rest_overview.csv`: csv-file with Table of all rest site properties
 
 ### Settings 
-*Please list and define all settings/parameters that the App requires to be set by the App user, if necessary including their unit. Please first state the Setting name the user encounters in the Settings menu defined in the appspecs.json, and between brackets the argument used in the R function to be able to identify it quickly in the code if needed.*
+*Please list and define all settings that the App requires to be set by the App user, if necessary including their unit. Please state each of the settings that the user will encounter in the UI of the shiny app.*
 
 *Example:* `Radius of resting site` (radius): Defined radius the animal has to stay in for a given duration of time for it to be considered resting site. Unit: `metres`.
+
+*Always include the "Store settings" setting as it will appear automatically in all shiny apps*
+`Store settings`: click to store the current settings of the App for future Workflow runs. 
 
 ### Changes in output data
 *Specify here how and if the App modifies the input data. Describe clearly what e.g. each additional column means.*

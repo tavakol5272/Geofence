@@ -1,5 +1,5 @@
 ########################################################################################################################
-# MoveApps R SDK
+# MoveApps R-SHINY SDK
 ########################################################################################################################
 
 FROM rocker/geospatial:4.5.1
@@ -48,10 +48,13 @@ COPY --chown=$UID:$GID renv/activate.R renv/settings.dcf ./renv/
 # Restore packages
 RUN R -e 'renv::restore(confirm = FALSE)'
 
-# copy the app
+# copy the SDK
 # glob patterns to use conditional copy
 COPY --chown=$UID:$GID sr[c]/ap[p]/* ./src/
 COPY --chown=$UID:$GID data/ ./data/
-COPY --chown=$UID:$GID sdk.R RFunction.R .env app-configuration.json start-process.sh ./
+COPY --chown=$UID:$GID sdk.R ShinyModule.R .env start-process.sh ./
+
+# shiny port
+EXPOSE 3838
 
 ENTRYPOINT ["/bin/bash"]

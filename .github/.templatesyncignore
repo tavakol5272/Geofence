@@ -1,9 +1,8 @@
-RFunction.R
+ShinyModule.R
 README.md
 renv/
 renv.lock
 *.Rproj
 appspec.json
-app-configuration.json
 data/auxiliary/
-tests/testthat/test_RFunction.R
+tests/testthat/test_ShinyModule.R
