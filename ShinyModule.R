@@ -6,16 +6,19 @@ library(leaflet.extras)
 library(htmlwidgets)
 library(webshot2)
 library(shinycssloaders)
+library(shinybusy)
 
-options(shiny.maxRequestSize = 100 * 1024^2)
+options(shiny.maxRequestSize = 100 * 1024^2) ###increase the size of uploaded file
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
 
 ######### Helpers
 
-###### helper1: Read uploaded polygon boundary
+# helper 1: read uploaded polygon boundary
 read_polygon_upload <- function(path) {
   if (is.null(path) || !file.exists(path)) return(NULL)
   
-  # zip shapefile
+  # zipped shapefile
   if (grepl("\\.zip$", path, ignore.case = TRUE)) {
     td <- tempfile("polyzip_")
     dir.create(td, recursive = TRUE, showWarnings = FALSE)
@@ -28,7 +31,6 @@ read_polygon_upload <- function(path) {
     return(poly)
   }
   
- 
   # GeoPackage: read first polygon layer
   if (grepl("\\.gpkg$", path, ignore.case = TRUE)) {
     layers_info <- tryCatch(sf::st_layers(path), error = function(e) NULL)
@@ -50,7 +52,7 @@ read_polygon_upload <- function(path) {
   NULL
 }
 
-########helper 2: Normalize and validate boundary geometry
+# helper 2: normalize and validate boundary geometry
 normalize_boundary <- function(poly) {
   if (is.null(poly) || nrow(poly) == 0) return(NULL)
   
@@ -69,8 +71,7 @@ normalize_boundary <- function(poly) {
   poly
 }
 
-
-############### helper3: Convert drawn feature on map to boundary
+# helper 3: convert one drawn feature on map to boundary
 feature_to_boundary_sf <- function(feature, id = 1) {
   if (is.null(feature) || is.null(feature$geometry$type)) return(NULL)
   
@@ -78,20 +79,20 @@ feature_to_boundary_sf <- function(feature, id = 1) {
   coords <- feature$geometry$coordinates
   geom <- NULL
   
-  # Polygon -Rectangle
+  # polygon / rectangle
   if (typ %in% c("Polygon", "MultiPolygon")) {
     ring <- if (typ == "Polygon") coords[[1]] else coords[[1]][[1]]
     mat <- do.call(rbind, lapply(ring, function(p) c(p[[1]], p[[2]])))
     geom <- sf::st_sfc(sf::st_polygon(list(mat)), crs = 4326)
   }
   
-  # Circle
+  # circle
   if (typ == "Point" && !is.null(feature$properties$radius)) {
     lon <- coords[[1]]
     lat <- coords[[2]]
     radius_m <- as.numeric(feature$properties$radius)
     
-    #Select projected CRS for circle buffer
+    # choose projected CRS for circle buffer
     zone <- floor((lon + 180) / 6) + 1
     epsg <- if (lat >= 0) 32600 + zone else 32700 + zone
     
@@ -107,7 +108,7 @@ feature_to_boundary_sf <- function(feature, id = 1) {
   sf::st_sf(shape_id = id, geometry = geom)
 }
 
-#### helper 4: convert all drawn features to boundary
+# helper 4: convert all drawn features to boundary
 feature_collection_to_boundary_sf <- function(fc) {
   if (is.null(fc) || is.null(fc$features) || length(fc$features) == 0) return(NULL)
   
@@ -120,48 +121,27 @@ feature_collection_to_boundary_sf <- function(fc) {
   
   normalize_boundary(do.call(rbind, parts))
 }
-######## helper 5:Extract coordinates of all drawn shapes#############
 
-extract_all_draw_coords <- function(fc) {
-  if (is.null(fc) || is.null(fc$features) || length(fc$features) == 0) return(NULL)
-  
-  out <- list()
-  for (i in seq_along(fc$features)) {
-    feature <- fc$features[[i]]
-    typ <- feature$geometry$type
-    coords <- feature$geometry$coordinates
-    
-    if (typ %in% c("Polygon", "MultiPolygon")) {
-      ring <- if (typ == "Polygon") coords[[1]] else coords[[1]][[1]]
-      mat <- do.call(rbind, lapply(ring, function(p) c(p[[1]], p[[2]])))
-      
-      df <- data.frame(shape_id = i, shape_type = typ, vertex = seq_len(nrow(mat)), longitude = round(mat[, 1], 6), latitude = round(mat[, 2], 6), radius_m = NA_real_)
-      
-      if (nrow(df) > 1 && df$longitude[1] == df$longitude[nrow(df)] &&  df$latitude[1] == df$latitude[nrow(df)]) {
-        df <- df[-nrow(df), ]
-      }
-      
-      out[[length(out) + 1]] <- df
-    }
-    
-    if (typ == "Point" && !is.null(feature$properties$radius)) {
-      out[[length(out) + 1]] <- data.frame(shape_id = i,shape_type = "Circle",vertex = 1, longitude = round(coords[[1]], 6), latitude = round(coords[[2]], 6),  radius_m = as.numeric(feature$properties$radius))
-    }
-  }
-  
-  if (length(out) == 0) return(NULL)
-  do.call(rbind, out)
-}
-
-
-######### helper 6:points popup
+# helper 5: point popup
 make_point_popup <- function(d) {
   xy <- sf::st_coordinates(d)
   tt <- as.character(mt_time(d))
-  paste0( "<b>Time:</b> ", tt, "<br>","<b>Lon:</b> ", round(xy[, 1], 6), "<br>","<b>Lat:</b> ", round(xy[, 2], 6), "<br>","<b>Flag:</b> ", d$flag  )
+  
+  paste0(
+    "<b>Time:</b> ", tt, "<br>",
+    "<b>Lon:</b> ", round(xy[, 1], 6), "<br>",
+    "<b>Lat:</b> ", round(xy[, 2], 6), "<br>",
+    "<b>Flag:</b> ", d$flag
+  )
 }
 
-###### helper 7:Build flagged points table
+# helper 6: parse saved animals json
+parse_animals_json <- function(x) {
+  if (is.null(x) || !nzchar(x)) return(character(0))
+  tryCatch(as.character(jsonlite::fromJSON(x)), error = function(e) character(0))
+}
+
+# helper 7: build flagged points table
 build_flagged_table <- function(d, boundary_sf, track_col) {
   if (is.null(d) || nrow(d) == 0) {
     return(data.frame(
@@ -191,7 +171,11 @@ build_flagged_table <- function(d, boundary_sf, track_col) {
     return(out)
   }
   
-  hits <- sf::st_intersects(d, boundary_sf)
+  # projected intersection for more stable inside/outside checks
+  d_proj <- sf::st_transform(d, 3857)
+  bnd_proj <- sf::st_transform(boundary_sf, 3857)
+  
+  hits <- sf::st_intersects(d_proj, bnd_proj)
   inside <- lengths(hits) > 0
   
   out$flag <- ifelse(inside, "inside", "outside")
@@ -203,7 +187,6 @@ build_flagged_table <- function(d, boundary_sf, track_col) {
 }
 
 ############################################### Interface #################################
-
 
 shinyModuleUserInterface <- function(id, label = NULL, ...) {
   ns <- NS(id)
@@ -221,40 +204,61 @@ shinyModuleUserInterface <- function(id, label = NULL, ...) {
           column(6, actionButton(ns("unselect_animals"), "Unselect All", class = "btn-sm"))
         ),
         
+        # hidden json-friendly track selection
+        tags$div(
+          style = "display:none;",
+          textInput(ns("animals_json"), label = NULL, value = "")
+        ),
+        
         hr(),
         
         h4("Polygon Boundary"),
-        radioButtons(ns("boundary_method"),"Boundary source", choices = c("Draw area on map" = "draw", "Upload area file" = "upload" ), selected = "draw" ),
+        radioButtons(
+          ns("boundary_method"),
+          "Boundary source",
+          choices = c("Draw area on map" = "draw", "Upload area file" = "upload"),
+          selected = "draw"
+        ),
         
         conditionalPanel(
           condition = sprintf("input['%s'] == 'upload'", ns("boundary_method")),
-          fileInput( ns("upload_user_polygon"), "Choose polygon file (.zip shapefile or .gpkg)",  accept = c(".zip", ".gpkg") )
+          fileInput(
+            ns("upload_user_polygon"),
+            "Choose polygon file (.zip shapefile or .gpkg)",
+            accept = c(".zip", ".gpkg")
+          )
         ),
         
         helpText("Draw mode supports polygon, rectangle, and circle."),
+        helpText("After changing track selection, click 'Flag Points' to update the flagged map."),
         
         br(),
-        actionButton(ns("apply_geofence"), "Flag Points",class = "btn-primary btn-block"),
-        
-        br(), br(),
-        h5("Drawn shape coordinates"),
-        tableOutput(ns("draw_coords_tbl")),
+        actionButton(ns("apply_geofence"), "Flag Points", class = "btn-primary btn-block"),
         
         hr(),
-        downloadButton(ns("save_html"), "Download HTML", class = "btn-sm"),
-        downloadButton(ns("save_png"), "Download PNG", class = "btn-sm"),
-        downloadButton(ns("download_draw_coords"), "Download drawn coordinates table", class = "btn-sm"),
-        downloadButton(ns("download_flagged_data"), "Download flagged data", class = "btn-sm")
+        
+        fluidRow(
+          column(6, downloadButton(ns("save_html"), "Download HTML", class = "btn-sm")),
+          column(6, downloadButton(ns("save_png"), "Download PNG", class = "btn-sm"))
+        ),
+        
+        br(),
+        
+        fluidRow(
+          column(6, downloadButton(ns("download_draw_gpkg"), "Drawn boundary (.gpkg)", class = "btn-sm")),
+          column(6, downloadButton(ns("download_flagged_data"), "Flagged data", class = "btn-sm"))
+        )
       ),
       
-      mainPanel(withSpinner(leafletOutput(ns("leafmap"), height = "85vh")), width = 9)
+      mainPanel(
+        withSpinner(leafletOutput(ns("leafmap"), height = "85vh")),
+        width = 9
+      )
     )
   )
 }
 
-
 ############################################ Server ###################################
-
 
 shinyModule <- function(input, output, session, data) {
   ns <- session$ns
@@ -276,10 +280,25 @@ shinyModule <- function(input, output, session, data) {
   all_ids <- sort(unique(as.character(data[[track_col]])))
   
   
-  # Track selection
-  
+  # track selection UI
   output$animals_ui <- renderUI({
-    checkboxGroupInput( ns("animals"),  label = NULL, choices = all_ids, selected = all_ids  )
+    selected_animals <- isolate(as.character(input$animals %||% character(0)))
+    
+    if (!length(selected_animals)) {
+      selected_animals <- parse_animals_json(isolate(input$animals_json))
+    }
+    if (!length(selected_animals)) {
+      selected_animals <- all_ids
+    }
+    
+    selected_animals <- intersect(selected_animals, all_ids)
+    
+    checkboxGroupInput(
+      ns("animals"),
+      label = NULL,
+      choices = all_ids,
+      selected = selected_animals
+    )
   })
   
   observeEvent(input$select_all_animals, {
@@ -290,49 +309,40 @@ shinyModule <- function(input, output, session, data) {
     updateCheckboxGroupInput(session, "animals", selected = character(0))
   }, ignoreInit = TRUE)
   
-  
-  # Selected original data
-  
-  selected_data <- reactive({
-    sel <- input$animals
-    if (is.null(sel) || length(sel) == 0) return(data[0, ])
-    
-    d <- data[data[[track_col]] %in% sel, ]
-    d <- d[!sf::st_is_empty(d), ]
-    d
+  # save selected animals as json-friendly hidden input
+  observe({
+    vals <- as.character(input$animals %||% character(0))
+    updateTextInput(session, "animals_json", value = jsonlite::toJSON(vals, auto_unbox = FALSE))
   })
   
-
-  # Track colors
-  
-  track_cols <- reactive({
-    d <- selected_data()
-    ids <- sort(unique(as.character(d[[track_col]])))
-    cols <- grDevices::hcl.colors(length(ids), palette = "Dark 3")
-    names(cols) <- ids
-    cols
+  # live selection from UI
+  live_animals <- reactive({
+    sel <- as.character(input$animals %||% character(0))
+    if (!length(sel)) {
+      sel <- parse_animals_json(input$animals_json)
+    }
+    if (!length(sel)) {
+      sel <- all_ids
+    }
+    intersect(sel, all_ids)
   })
   
-  
-  # Drawn boundary + coords
-  
-  drawn_boundary <- reactiveVal(NULL)
-  drawn_coords <- reactiveVal(NULL)
+  # applied selection snapshot:
+  # after clicking Flag Points, the map uses this frozen set
+  applied_animals <- reactiveVal(all_ids)
   applied <- reactiveVal(FALSE)
   
-  output$draw_coords_tbl <- renderTable({
-    drawn_coords()
-  }, rownames = FALSE)
+  
+  # drawn / uploaded boundary
+  drawn_boundary <- reactiveVal(NULL)
   
   observeEvent(input$leafmap_draw_all_features, {
     fc <- input$leafmap_draw_all_features
     
     if (is.null(fc) || is.null(fc$features) || length(fc$features) == 0) {
       drawn_boundary(NULL)
-      drawn_coords(NULL)
     } else {
       drawn_boundary(feature_collection_to_boundary_sf(fc))
-      drawn_coords(extract_all_draw_coords(fc))
     }
     
     applied(FALSE)
@@ -347,11 +357,9 @@ shinyModule <- function(input, output, session, data) {
   }, ignoreInit = TRUE)
   
   observeEvent(input$apply_geofence, {
+    applied_animals(live_animals())
     applied(TRUE)
   }, ignoreInit = TRUE)
-  
-  
-  # Uploaded boundary
   
   upload_boundary <- reactive({
     info <- input$upload_user_polygon
@@ -360,9 +368,6 @@ shinyModule <- function(input, output, session, data) {
     poly <- read_polygon_upload(info$datapath)
     normalize_boundary(poly)
   })
-  
-  
-  # Active boundary
   
   active_boundary <- reactive({
     if (is.null(input$boundary_method)) return(NULL)
@@ -378,9 +383,40 @@ shinyModule <- function(input, output, session, data) {
     NULL
   })
   
+  # current animals used by map/data- before apply: follows UI- after apply: stays frozen until button clicked again
+  current_animals <- reactive({
+    if (isTRUE(applied())) {
+      applied_animals()
+    } else {
+      live_animals()
+    }
+  })
   
-  # Flagged table for CSV download
-  # always computed from current boundary
+  
+  # selected original data
+  
+  selected_data <- reactive({
+    sel <- current_animals()
+    if (is.null(sel) || length(sel) == 0) return(data[0, ])
+    
+    d <- data[as.character(data[[track_col]]) %in% sel, ]
+    d <- d[!sf::st_is_empty(d), ]
+    d
+  })
+  
+  
+  # track colors
+  
+  track_cols <- reactive({
+    d <- selected_data()
+    ids <- sort(unique(as.character(d[[track_col]])))
+    cols <- grDevices::hcl.colors(length(ids), palette = "Dark 3")
+    names(cols) <- ids
+    cols
+  })
+  
+  
+  # flagged table for CSV download
   
   flagged_table <- reactive({
     d <- selected_data()
@@ -389,8 +425,7 @@ shinyModule <- function(input, output, session, data) {
   })
   
   
-  # Data for map display only
-  # green/red only after Apply
+  # data for map display only
   
   display_data <- reactive({
     d <- selected_data()
@@ -408,24 +443,19 @@ shinyModule <- function(input, output, session, data) {
       d$shape_id <- ""
     }
     
-    # keep original track color as point fill
     d$point_color <- d$track_color
-    
-    # border color only for flagging
     d$border_color <- ifelse(
       d$flag == "inside", "black",
       ifelse(d$flag == "outside", "gold", d$track_color)
     )
-    
     d$border_weight <- ifelse(d$flag %in% c("inside", "outside"), 3, 1)
-    
     d$popup_html <- make_point_popup(d)
+    
     d
   })
   
-  
-  # Track lines
-  
+ 
+  # track lines
   track_lines_data <- reactive({
     d <- selected_data()
     if (nrow(d) < 2) return(NULL)
@@ -442,11 +472,13 @@ shinyModule <- function(input, output, session, data) {
     tl
   })
   
-  
-  # Base map
+ 
+  # base map
   
   output$leafmap <- renderLeaflet({
     method <- input$boundary_method
+    # ids <- sort(unique(as.character(d[[track_col]])))
+    # tr_cols <- track_cols()
     
     m <- leaflet(options = leafletOptions(minZoom = 2)) %>%
       addProviderTiles("OpenStreetMap", group = "OpenStreetMap") %>%
@@ -482,9 +514,8 @@ shinyModule <- function(input, output, session, data) {
         title = "Geofence"
       )
   })
-  
-  
-  # Update layers
+ 
+  # update layers
   
   observe({
     d <- display_data()
@@ -499,17 +530,9 @@ shinyModule <- function(input, output, session, data) {
       clearGroup("Track lines") %>%
       clearGroup("Points")
     
-    # uploaded boundary is shown as static layer
-    # drawn boundary is managed by draw toolbar
     if (!is.null(method) && method == "upload" && !is.null(bnd) && nrow(bnd) > 0) {
       proxy %>%
-        addPolygons(
-          data = bnd,
-          fill = FALSE,
-          weight = 3,
-          color = "dodgerblue",
-          group = "Boundary"
-        )
+        addPolygons(  data = bnd, fill = FALSE, weight = 3, color = "dodgerblue",  group = "Boundary"  )
     }
     
     if (!is.null(tl) && nrow(tl) > 0) {
@@ -550,8 +573,8 @@ shinyModule <- function(input, output, session, data) {
     }
   })
   
-  
-  # Export map
+ 
+  # export map
   
   build_export_map <- function() {
     d <- display_data()
@@ -566,7 +589,7 @@ shinyModule <- function(input, output, session, data) {
       m <- m %>%
         addPolygons(
           data = bnd,
-          fill = FALSE,
+          fill = TRUE,
           weight = 3,
           color = "dodgerblue"
         )
@@ -610,44 +633,48 @@ shinyModule <- function(input, output, session, data) {
     m
   }
   
+  
+  
+  # downloads
+  
+  
+  #### download HTML
   output$save_html <- downloadHandler(
     filename = function() paste0("Geofence_map_", Sys.Date(), ".html"),
     content = function(file) {
-      htmlwidgets::saveWidget(build_export_map(), file = file, selfcontained = TRUE)
+      shinybusy::show_modal_spinner(spin = "fading-circle", text = "Saving HTML…")
+      on.exit(shinybusy::remove_modal_spinner(), add = TRUE)
+      saveWidget(build_export_map(), file = file, selfcontained = TRUE)
     }
   )
   
+  ### save map as PNG
   output$save_png <- downloadHandler(
     filename = function() paste0("Geofence_map_", Sys.Date(), ".png"),
     content = function(file) {
-      html_file <- tempfile(fileext = ".html")
+      shinybusy::show_modal_spinner(spin = "fading-circle", text = "Saving PNG…")
+      on.exit(shinybusy::remove_modal_spinner(), add = TRUE)
+      html_file <- "leaflet_export.html"
       htmlwidgets::saveWidget(build_export_map(), file = html_file, selfcontained = TRUE)
-      webshot2::webshot(html_file, file = file, vwidth = 1400, vheight = 900)
+      Sys.sleep(2)
+      webshot2::webshot( url = html_file,file = file,vwidth = 1000, vheight = 800      )
     }
   )
   
-  
-  # Download drawn coordinate table
-  
-  output$download_draw_coords <- downloadHandler(
+  ### save polygons as gpkg
+  output$download_draw_gpkg <- downloadHandler(
     filename = function() {
-      paste0("drawn_coordinates_", Sys.Date(), ".csv")
+      paste0("drawn_boundary_", Sys.Date(), ".gpkg")
     },
     content = function(file) {
-      coords <- drawn_coords()
+      bnd <- drawn_boundary()
+      if (is.null(bnd) || nrow(bnd) == 0) return()
       
-      if (is.null(coords) || nrow(coords) == 0) {
-        write.csv(data.frame(message = "No drawn shape available"), file, row.names = FALSE)
-      } else {
-        write.csv(coords, file, row.names = FALSE)
-      }
+      sf::st_write(bnd, file, driver = "GPKG", delete_dsn = TRUE, quiet = TRUE)
     }
   )
   
-  
-  # Download flagged data CSV
-  # track_id, longitude, latitude, timestamp, flag, shape_id
-  
+  # save data with flags
   output$download_flagged_data <- downloadHandler(
     filename = function() {
       paste0("flagged_points_", Sys.Date(), ".csv")
@@ -664,7 +691,7 @@ shinyModule <- function(input, output, session, data) {
   )
   
   
-  # Return original selected data unchanged
+  # return original selected data unchanged
   
   current <- reactive({
     selected_data()
