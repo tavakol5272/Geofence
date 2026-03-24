@@ -272,7 +272,13 @@ shinyModule <- function(input, output, session, data) {
   all_ids <- sort(unique(as.character(data[[track_col]])))
   
   
-  
+  ############
+  # track colors
+  track_cols <- reactive({
+    cols <- grDevices::hcl.colors(length(all_ids), palette = "Dark 3")
+    names(cols) <- all_ids
+    cols
+  })
   #################
   output$animals_ui <- renderUI({
     restored_sel <- isolate(input$animals)
@@ -305,10 +311,10 @@ shinyModule <- function(input, output, session, data) {
   }, ignoreInit = TRUE)
   
   # save selected animals as json-friendly hidden input
-  observe({
+  observeEvent(input$animals, {
     vals <- as.character(input$animals %||% character(0))
     updateTextInput(session, "animals_json", value = jsonlite::toJSON(vals, auto_unbox = FALSE))
-  })
+  }, ignoreInit = TRUE)
   
   # give me the current animal selection
   live_animals <- reactive({
@@ -322,15 +328,13 @@ shinyModule <- function(input, output, session, data) {
   applied <- reactiveVal(FALSE)
   
   init_applied <- reactiveVal(FALSE)
-  
+  ###################
   observeEvent(input$animals, {
-    if (isTRUE(init_applied())) return()
-    if (is.null(input$animals)) return()
-    
-    applied_animals(as.character(input$animals))
-    init_applied(TRUE)
-  }, ignoreInit = FALSE)
-  
+  req(!is.null(input$animals))
+  applied_animals(as.character(input$animals))
+  init_applied(TRUE)
+}, ignoreInit = FALSE, once = TRUE)
+  #####################
   # drawn / uploaded boundary
   drawn_boundary <- reactiveVal(NULL)
   
@@ -403,6 +407,8 @@ shinyModule <- function(input, output, session, data) {
   
   # take the full dataset, keep only the currently selected animals
   selected_data <- reactive({
+    req(init_applied())
+    
     sel <- current_animals()
     if (is.null(sel) || length(sel) == 0) return(data[0, ])
     
@@ -412,12 +418,7 @@ shinyModule <- function(input, output, session, data) {
   })
   
   
-  # track colors
-  track_cols <- reactive({
-    cols <- grDevices::hcl.colors(length(all_ids), palette = "Dark 3")
-    names(cols) <- all_ids
-    cols
-  })
+  
   
   
   ###################
@@ -552,7 +553,7 @@ shinyModule <- function(input, output, session, data) {
   })
   
  
-  # export map
+  # export map for saving 
   
   build_export_map <- function() {
     d <- display_data()
@@ -607,7 +608,7 @@ shinyModule <- function(input, output, session, data) {
       html_file <- "leaflet_export.html"
       htmlwidgets::saveWidget(build_export_map(), file = html_file, selfcontained = TRUE)
       Sys.sleep(2)
-      webshot2::webshot( url = html_file,file = file,vwidth = 1000, vheight = 800      )
+      webshot2::webshot( url = html_file,file = file,vwidth = 1000, vheight = 800 )
     }
   )
   
