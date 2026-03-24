@@ -1,80 +1,70 @@
-# Name of App *(Give your app a short and informative title. Please adhere to our convention of Title Case without hyphens (e.g. My New App))*
+# Geofence
 
 MoveApps
 
-Github repository: *github.com/yourAccount/Name-of-App* *(provide the link to the repository where the code of the App can be found)*
+Github repository: *https://github.com/nilanjanchatterjee/Geofence*
 
 ## Description
-*Enter here the short description of the App that might also be used when filling out the description during App submission to MoveApps. This text is directly presented to Users that look through the list of Apps when compiling Workflows.*
+The app classifies animal tracking locations as inside or outside a user-defined polygon boundary. 
+The boundary can either be drawn directly on the interactive map or uploaded as a polygon file in .zip shapefile or .gpkg format.
+The app is intended for interactive geofencing of movement data, allowing users to identify and visualize which animal locations fall inside or outside a selected boundary.
 
 ## Documentation
-*Enter here a detailed description of your App. What is it intended to be used for. Which steps of analyses are performed and how. Please be explicit about any detail that is important for use and understanding of the App and its outcomes. You might also refer to the sections below.*
+This app is used to geofence animal tracking data from a move2 object. Users can select one or more tracks, then define a polygon boundary either by drawing it on the map or by uploading a .zip shapefile or .gpkg file. 
+After clicking Flag Points, the app classifies the selected locations as inside or outside the boundary and displays the results on the map.
+The map shows track lines, point locations, and popups with time, coordinates, and flag status. 
+Users can download the drawn boundary as a GeoPackage, export the flagged points as a CSV file, and save the map as HTML or PNG.
+If users want, they can also draw a polygon, download it with , and use it again in a later run by uploading it as a boundary file.
 
 ### Application scope
 #### Generality of App usability
-*State here if the App was developed for a specific species, taxon or taxonomic group, or to answer a specific question. How might it influence the scope and utility of the App. This information will help the user to understand why the App might be producing no or odd results.*
-
-*Examples:*
-
-This App was developed using data of birds. 
-
-This App was developed using data of red deer. 
-
 This App was developed for any taxonomic group. 
 
-This App was developed to identify kill sites, but can probably be used to identify any kind of location clusters like nests, dens or drinking holes.
-
 #### Required data properties
-*State here the required and/or optimal data properties for this App to perform properly.*
-
-*Examples:*
-
-This App is only applicable to data that reflect range resident behavior. 
-
-The data should have a fix rate of at least 1 location per 30 minutes. 
-
 The App should work for any kind of (location) data.
 
 ### Input type
-*Indicate which type of input data the App requires.*
-
-*Example*: `move2::move2_loc`
+`move2::move2_loc`
 
 ### Output type
-*Indicate which type of output data the App produces to be passed on to subsequent Apps.*
+`move2::move2_loc`
 
-*Example:* `move2::move2_loc`
 
 ### Artefacts
-*If the App creates artefacts (e.g. csv, pdf, jpeg, shapefiles, etc), please list them here and describe each.*
 
-*Example:* `rest_overview.csv`: csv-file with Table of all rest site properties
+The app can generate the following artefacts for download:
 
-### Settings 
-*Please list and define all settings that the App requires to be set by the App user, if necessary including their unit. Please state each of the settings that the user will encounter in the UI of the shiny app.*
+* **Drawn boundary (.gpkg):** exports the polygon drawn directly in the app as a GeoPackage file. This can be used again in later runs by uploading it as a boundary file.
+* **Flagged data (.csv):** exports the selected animal locations together with longitude, latitude, timestamp, and their classification as inside or outside the boundary.
+* **Map (.html):** saves the current interactive map as an HTML file.
+* **Map (.png):** saves the current map as a static PNG image.
 
-*Example:* `Radius of resting site` (radius): Defined radius the animal has to stay in for a given duration of time for it to be considered resting site. Unit: `metres`.
 
-*Always include the "Store settings" setting as it will appear automatically in all shiny apps*
-`Store settings`: click to store the current settings of the App for future Workflow runs. 
+### Settings
+"Tracks": Select one or more individuals to display on the map. Buttons are available to select all or unselect all tracks.
+
+"Polygon Boundary": Choose how the boundary should be defined. Users can either draw an area directly on the map or upload a polygon file in .zip shapefile or .gpkg format.
+
+"Flag Points": Applies the geofence to the currently selected tracks and classifies locations as inside or outside the chosen boundary.
+
+"Download":
+Download HTML: locally downloads the current map in HTML format.
+Download PNG: locally downloads the current map in PNG format.
+Download Drawn boundary (.gpkg): downloads the polygon drawn in the app as a GeoPackage file. This option is available only when the draw mode is used.
+Flagged data: downloads the current flagged points as a CSV file.
 
 ### Changes in output data
-*Specify here how and if the App modifies the input data. Describe clearly what e.g. each additional column means.*
 
-*Examples:*
-
-The App adds to the input data the columns `Max_dist` and `Avg_dist`. They contain the maximum distance to the provided focal location and the average distance to it over all locations. 
-
-The App filterers the input data as selected by the user. 
-
-The output data is the outcome of the model applied to the input data. 
-
-The input data remains unchanged.
+The input data remain unchanged and are passed on as output. Geofence results are only used for visualization and downloadable exports.
 
 ### Most common errors
-*Please describe shortly what most common errors of the App can be, how they occur and best ways of solving them.*
+
+**Unsupported upload:** Only `.zip` shapefiles and `.gpkg` files with polygon geometry are supported.
+**No track selected:** The map is not updated until at least one track is selected.
+**Boundary changed:** If tracks or boundary are changed, users need to click **Flag Points** again.
 
 ### Null or error handling
-*Please indicate for each setting as well as the input data which behaviour the App is supposed to show in case of errors or NULL values/input. Please also add notes of possible errors that can happen if settings/parameters are improperly set and any other important information that you find the user should be aware of.*
 
-*Example:* **Setting `radius`:** If no radius AND no duration are given, the input data set is returned with a warning. If no radius is given (NULL), but a duration is defined then a default radius of 1000m = 1km is set. 
+**Big data:** If the input dataset exceeds 200,000 locations, the Shiny UI may not perform properly.
+**No track selected:** The map is not updated until at least one track is chosen.
+**No valid boundary:** If no valid boundary is drawn or uploaded, no geofence classification is applied.
