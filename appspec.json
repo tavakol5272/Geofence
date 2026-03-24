@@ -1,69 +1,55 @@
 {
   "version": "1.2",
   "settings": [
-    {
-      "id": "polygon",
-      "name": "polygon files",
-      "description": "You can upload local files for running the resource selection function analysis. Make sure that they overlap with the tracking data set and are in WGS 84 projection! The App requires the following files, named exactly as given: 1. `polygon_boundary.cpg`, 2. `polygon_boundary.dbf`, 3. `polygon_boundary.prj`, 4. `polygon_boundary.shp`, 5. `polygon_boundary.shx`. Note that fallback protected area polygon file of Y2Y region is provided",
-       "type": "USER_FILE"
-    },
-    {
-  "id": "y2y",
-  "name": "Y2Y protected area",
-  "description": "If you do not upload a polygon file, you can use the provided fallback protected-area layer from the Y2Y (Yellowstone to Yukon) region. Y2Y is a conservation corridor in western North America spanning from Greater Yellowstone (USA) to the Yukon (Canada).",
-  "defaultValue": "yes",
-  "type": "RADIOBUTTONS",
-  "options": [{
-      "value": "yes",
-      "displayText": "Yes"
-    },
-    {
-      "value": "no",
-      "displayText": "No"
-    }]
-}
-    ],
-     "providedAppFiles": [
-    {
-      "settingId": "polygon",
-      "from": "data/auxiliary/user-files/provided-app-files/polygon/"
-    }
+    
   ],
   "dependencies": {
     "R": [
       {
-        "name": "sf"
+        "name": "move2"
       },
       {
         "name": "shiny"
       },
-      {
-        "name": "move2"        
+	        {
+        "name": "sf"
       },
-      {
-        "name": "htmlwidgets"
-      },
-      {
-        "name": "leaflet"
-      },
-      {
+	        {
         "name": "leaflet.extras"
       },
-      {
+	        {
+        "name": "leaflet"
+      },
+	  	    {
+        "name": "htmlwidgets"
+      },
+	  	        {
         "name": "webshot2"
+      },
+	  	        {
+        "name": "shinycssloaders"
+      },
+	  	        {
+        "name": "shinybusy"
+      },
+	  	        {
+        "name": "grDevices"
       }
     ]
   },
-  "createsArtifacts": true,
-  
   "license": {
     "key": "MIT"
   },
   "language": "eng",
   "keywords": [
-    "example",
-    "template"
-  ],
+  "geofence",
+  "polygon boundary",
+  "spatial filtering",
+  "inside outside classification",
+  "move2",
+  "leaflet",
+  "animal tracking"
+],
   "people": [
     {
       "firstName": "Nilanjan",
@@ -85,11 +71,5 @@
       "affiliation": "Max-Planck-Institute of Animal Behavior",
       "affiliationRor": "https://ror.org/026stee22"
     }
-  ],
-  
-  "funding": [
-    {
-	"name": "NASA MoveApps Project"
-	}
   ]
 }
