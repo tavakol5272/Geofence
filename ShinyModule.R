@@ -7,7 +7,7 @@ library(htmlwidgets)
 library(webshot2)
 library(shinycssloaders)
 library(shinybusy)
-library(grDevices)
+library(jsonlite)
 
 options(shiny.maxRequestSize = 100 * 1024^2) ###increase the size of uploaded file
 

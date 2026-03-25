@@ -4,39 +4,19 @@
     
   ],
   "dependencies": {
-    "R": [
-      {
-        "name": "move2"
-      },
-      {
-        "name": "shiny"
-      },
-	        {
-        "name": "sf"
-      },
-	        {
-        "name": "leaflet.extras"
-      },
-	        {
-        "name": "leaflet"
-      },
-	  	    {
-        "name": "htmlwidgets"
-      },
-	  	        {
-        "name": "webshot2"
-      },
-	  	        {
-        "name": "shinycssloaders"
-      },
-	  	        {
-        "name": "shinybusy"
-      },
-	  	        {
-        "name": "grDevices"
-      }
-    ]
-  },
+  "R": [
+    { "name": "move2" },
+    { "name": "shiny" },
+    { "name": "sf" },
+    { "name": "leaflet" },
+    { "name": "leaflet.extras" },
+    { "name": "htmlwidgets" },
+    { "name": "webshot2" },
+    { "name": "shinycssloaders" },
+    { "name": "shinybusy" },
+    { "name": "jsonlite" }
+  ]
+},
   "license": {
     "key": "MIT"
   },
