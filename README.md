@@ -47,15 +47,16 @@ The app can generate the following artefacts for download:
 
 "Flag Points": Applies the geofence to the currently selected tracks and classifies locations as inside or outside the chosen boundary.
 
-"Download":
-Download HTML: locally downloads the current map in HTML format.
-Download PNG: locally downloads the current map in PNG format.
+**"Download":**
+Download map as HTML: locally downloads the current map in HTML format.
+Download map as PNG: locally downloads the current map in PNG format.
 Download Drawn boundary (.gpkg): downloads the polygon drawn in the app as a GeoPackage file. This option is available only when the draw mode is used.
-Flagged data: downloads the current flagged points as a CSV file.
+Download selected flagged data CSV: downloads the current flagged points as a CSV file.
 
 ### Changes in output data
 
-The input data remain unchanged and are passed on as output. Geofence results are only used for visualization and downloadable exports.
+The output data contain the full original input data with an additional `within` column. This column stores the geofence result for each point (`1` = inside, `0` = outside). 
+track selection only affects the map display.
 
 ### Most common errors
 

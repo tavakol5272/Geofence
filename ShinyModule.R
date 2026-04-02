@@ -13,9 +13,9 @@ options(shiny.maxRequestSize = 100 * 1024^2) ###increase the size of uploaded fi
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
-######### Helpers
+######### Helpers ##############
 
-# helper 1: read uploaded polygon boundary
+### helper 1: read uploaded polygon boundary
 read_polygon_upload <- function(path) {
   if (is.null(path) || !file.exists(path)) return(NULL)
   
@@ -53,7 +53,7 @@ read_polygon_upload <- function(path) {
   NULL
 }
 
-# helper 2: normalize and validate boundary geometry
+### helper 2: normalize and validate boundary geometry
 normalize_boundary <- function(poly) {
   if (is.null(poly) || nrow(poly) == 0) return(NULL)
   
@@ -72,7 +72,7 @@ normalize_boundary <- function(poly) {
   poly
 }
 
-# helper 3: convert one drawn feature on map to boundary
+### helper 3: convert one drawn feature on map to boundary
 feature_to_boundary_sf <- function(feature, id = 1) {
   if (is.null(feature) || is.null(feature$geometry$type)) return(NULL)
   
@@ -109,7 +109,7 @@ feature_to_boundary_sf <- function(feature, id = 1) {
   sf::st_sf(shape_id = id, geometry = geom)
 }
 
-# helper 4: convert all drawn features to boundary
+### helper 4: convert all drawn features to boundary
 draw_to_boundary_sf <- function(fc) {
   if (is.null(fc) || is.null(fc$features) || length(fc$features) == 0) return(NULL)
   
@@ -123,7 +123,7 @@ draw_to_boundary_sf <- function(fc) {
   normalize_boundary(do.call(rbind, parts))
 }
 
-# helper 5: point popup
+### helper 5: point popup
 make_point_popup <- function(d) {
   xy <- sf::st_coordinates(d)
   tt <- as.character(mt_time(d))
@@ -137,7 +137,7 @@ make_point_popup <- function(d) {
 }
 
 
-# helper 6: build flagged points table
+### helper 6: build flagged points table
 build_flagged_table <- function(d, boundary_sf, track_col) {
   if (is.null(d) || nrow(d) == 0) {
     return(data.frame(
@@ -167,11 +167,8 @@ build_flagged_table <- function(d, boundary_sf, track_col) {
     return(out)
   }
   
-  # projected intersection for more stable inside/outside checks
-  d_proj <- sf::st_transform(d, 3857)
-  bnd_proj <- sf::st_transform(boundary_sf, 3857)
   
-  hits <- sf::st_intersects(d_proj, bnd_proj)
+  hits <- sf::st_within(d, boundary_sf)
   inside <- lengths(hits) > 0
   
   out$flag <- ifelse(inside, "inside", "outside")
@@ -233,17 +230,19 @@ shinyModuleUserInterface <- function(id, label = NULL, ...) {
         hr(),
         
         fluidRow(
-          column(6, downloadButton(ns("save_html"), "Download HTML", class = "btn-sm")),
-          column(6, downloadButton(ns("save_png"), "Download PNG", class = "btn-sm"))
+          column(6, downloadButton(ns("save_html"), "Download map as HTML", class = "btn-sm")),
+          column(6, downloadButton(ns("save_png"), "Download map as PNG", class = "btn-sm"))
         ),
         
         br(),
         
-        fluidRow(
+        
           conditionalPanel( condition = sprintf("input['%s'] == 'draw'", ns("boundary_method")),
-            column(6, downloadButton(  ns("download_draw_gpkg"),  "Download Drawn boundary (.gpkg)", class = "btn-sm" ) )  ),
-          column(6, downloadButton(ns("download_flagged_data"), "Flagged data", class = "btn-sm"))
-        )
+            downloadButton(  ns("download_draw_gpkg"),  "Download Drawn boundary (.gpkg)", class = "btn-sm" )  ),
+        
+        br(),
+        downloadButton(ns("download_flagged_data"), "Download selected flagged data CSV", class = "btn-sm")
+        
       ),
       
       mainPanel(
@@ -399,6 +398,25 @@ shinyModule <- function(input, output, session, data) {
     NULL
   })
   
+  ###########
+  #full data with one extra column within
+  full_flagged_data <- reactive({
+    req(data)
+    d <- data
+    d$within <- NA_integer_
+    if (!isTRUE(applied())) { return(d) }
+    bnd <- active_boundary()
+    if (is.null(bnd) || nrow(bnd) == 0) { return(d) }
+    keep <- !sf::st_is_empty(d)
+    if (!any(keep)) { return(d) }
+    hits <- sf::st_within(d[keep, ], bnd)
+    inside <- lengths(hits) > 0
+    d$within[keep] <- as.integer(inside)
+    d
+  })
+  
+  #############
+  
   # current animals 
   current_animals <- reactive({
     applied_animals()
@@ -409,10 +427,12 @@ shinyModule <- function(input, output, session, data) {
   selected_data <- reactive({
     req(init_applied())
     
+    d_all <- full_flagged_data()
     sel <- current_animals()
-    if (is.null(sel) || length(sel) == 0) return(data[0, ])
     
-    d <- data[as.character(data[[track_col]]) %in% sel, ]
+    if (is.null(sel) || length(sel) == 0) return(d_all[0, ])
+    
+    d <- d_all[as.character(d_all[[track_col]]) %in% sel, ]
     d <- d[!sf::st_is_empty(d), ]
     d
   })
@@ -441,13 +461,11 @@ shinyModule <- function(input, output, session, data) {
     d$track_color <- unname(track_cols()[d$track_id_chr])
     
     if (isTRUE(applied())) {
-      tab <- build_flagged_table(d, active_boundary(), track_col)
-      d$flag <- tab$flag
-      d$shape_id <- tab$shape_id
+      d$flag <- ifelse(d$within == 1, "inside", "outside")
     } else {
       d$flag <- "-"
-      d$shape_id <- ""
     }
+    d$shape_id <- ""
     
     d$point_color <- d$track_color
     d$border_color <- ifelse(
@@ -644,8 +662,5 @@ shinyModule <- function(input, output, session, data) {
   
   # return data
   
-  return(reactive({
-    req(data)
-    data
-  }))
+  return(full_flagged_data)
 }
