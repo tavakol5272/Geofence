@@ -9,6 +9,7 @@ library(shinycssloaders)
 library(shinybusy)
 library(jsonlite)
 
+
 options(shiny.maxRequestSize = 100 * 1024^2) ###increase the size of uploaded file
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
@@ -257,6 +258,7 @@ shinyModuleUserInterface <- function(id, label = NULL, ...) {
 
 shinyModule <- function(input, output, session, data) {
   ns <- session$ns
+  setBookmarkExclude("upload_user_polygon")
   
   if (is.null(data) || nrow(data) == 0) {
     message("Input is NULL or has 0 rows.")
