@@ -2,7 +2,7 @@
 
 MoveApps
 
-Github repository: *https://github.com/nilanjanchatterjee/Geofence*
+Github repository: *https://github.com/tavakol5272/Geofence*
 
 ## Description
 The app classifies animal tracking locations as inside or outside a user-defined polygon boundary. 
