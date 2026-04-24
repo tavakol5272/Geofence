@@ -217,7 +217,7 @@ shinyModuleUserInterface <- function(id, label = NULL, ...) {
             accept = c(".zip", ".gpkg")
           ),
           tags$div(
-            style = "color:#b30000; font-weight:600; margin-top:5px;",
+            style = "color:red; font-weight:600; margin-top:5px;",
             textOutput(ns("upload_msg"))
           )
         ),
@@ -228,19 +228,13 @@ shinyModuleUserInterface <- function(id, label = NULL, ...) {
         br(),
         actionButton(ns("apply_geofence"), "Flag Points", class = "btn-primary btn-block"),
         
-        hr(),
-        
-        fluidRow(
-          column(6, downloadButton(ns("save_html"), "Download map as HTML", class = "btn-sm")),
-          column(6, downloadButton(ns("save_png"), "Download map as PNG", class = "btn-sm"))
-        ),
-        
         br(),
-        
-        
-          conditionalPanel( condition = sprintf("input['%s'] == 'draw'", ns("boundary_method")),
+        downloadButton(ns("save_html"), "Download map as HTML", class = "btn-sm"),
+        br(),br(),
+        downloadButton(ns("save_png"), "Download map as PNG", class = "btn-sm"),
+        br(),br(),
+        conditionalPanel( condition = sprintf("input['%s'] == 'draw'", ns("boundary_method")),
             downloadButton(  ns("download_draw_gpkg"),  "Download Drawn boundary (.gpkg)", class = "btn-sm" )  ),
-        
         br(),
         downloadButton(ns("download_flagged_data"), "Download selected flagged data CSV", class = "btn-sm")
         
@@ -438,10 +432,6 @@ shinyModule <- function(input, output, session, data) {
     d <- d[!sf::st_is_empty(d), ]
     d
   })
-  
-  
-  
-  
   
   ###################
   # flagged table for CSV download

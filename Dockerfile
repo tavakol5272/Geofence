@@ -7,14 +7,6 @@ FROM rocker/geospatial:4.5.1
 LABEL org.opencontainers.image.authors="us@couchbits.com"
 LABEL org.opencontainers.image.vendor="couchbits GmbH"
 
-# Install Chromium for webshot2/chromote PNG export
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
- && rm -rf /var/lib/apt/lists/*
-
-# Tell chromote/webshot2 where Chromium is
-ENV CHROMOTE_CHROME=/usr/bin/chromium
-
 # Security Aspects
 # Create a non-root user
 ARG username=moveapps
@@ -35,13 +27,10 @@ RUN adduser --disabled-password \
     --ingroup $GID \
     --home $HOME \
     $USER
-
 # create working dir with correct ownership
 RUN install -d -o moveapps -g staff $HOME/co-pilot-r
-
 # create cache-directory for renv with correct ownership
 RUN install -d -o moveapps -g staff $HOME/.cache/R
-
 USER $USER
 WORKDIR $HOME/co-pilot-r
 
@@ -56,7 +45,6 @@ RUN R -e "if (!requireNamespace('renv', quietly = TRUE)) install.packages('renv'
 # Copy renv files first (for better Docker layer caching)
 COPY --chown=$UID:$GID renv.lock .Rprofile ./
 COPY --chown=$UID:$GID renv/activate.R renv/settings.dcf ./renv/
-
 # Restore packages
 RUN R -e 'renv::restore(confirm = FALSE)'
 

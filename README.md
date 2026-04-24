@@ -2,7 +2,7 @@
 
 MoveApps
 
-Github repository: *https://github.com/nilanjanchatterjee/Geofence*
+Github repository: *https://github.com/tavakol5272/Geofence*
 
 ## Description
 The app classifies animal tracking locations as inside or outside a user-defined polygon boundary. 
@@ -47,11 +47,11 @@ The app can generate the following artefacts for download:
 
 "Flag Points": Applies the geofence to the currently selected tracks and classifies locations as inside or outside the chosen boundary.
 
-**"Download":**
-Download map as HTML: locally downloads the current map in HTML format.
-Download map as PNG: locally downloads the current map in PNG format.
-Download Drawn boundary (.gpkg): downloads the polygon drawn in the app as a GeoPackage file. This option is available only when the draw mode is used.
-Download selected flagged data CSV: downloads the current flagged points as a CSV file.
+**"Download":**  
+Download map as HTML: locally downloads the current map in HTML format.  
+Download map as PNG: locally downloads the current map in PNG format.  
+Download Drawn boundary (.gpkg): downloads the polygon drawn in the app as a GeoPackage file. This option is available only when the draw mode is used.  
+Download selected flagged data CSV: downloads the current flagged points as a CSV file.  
 
 ### Changes in output data
 
@@ -60,12 +60,12 @@ track selection only affects the map display.
 
 ### Most common errors
 
-**Unsupported upload:** Only `.zip` shapefiles and `.gpkg` files with polygon geometry are supported.
-**No track selected:** The map is not updated until at least one track is selected.
-**Boundary changed:** If tracks or boundary are changed, users need to click **Flag Points** again.
+**Unsupported upload:** Only `.zip` shapefiles and `.gpkg` files with polygon geometry are supported.  
+**No track selected:** The map is not updated until at least one track is selected.  
+**Boundary changed:** If tracks or boundary are changed, users need to click **Flag Points** again.  
 
 ### Null or error handling
 
-**Big data:** If the input dataset exceeds 200,000 locations, the Shiny UI may not perform properly.
-**No track selected:** The map is not updated until at least one track is chosen.
-**No valid boundary:** If no valid boundary is drawn or uploaded, no geofence classification is applied.
+**Big data:** If the input dataset exceeds 200,000 locations, the Shiny UI may not perform properly.  
+**No track selected:** The map is not updated until at least one track is chosen.  
+**No valid boundary:** If no valid boundary is drawn or uploaded, no geofence classification is applied.  
