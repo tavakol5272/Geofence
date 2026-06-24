@@ -96,6 +96,8 @@ build_flagged_table <- function(d, boundary_sf, track_col) {
   
   
   hits <- sf::st_within(d, boundary_sf)
+  #hits <- sf::st_intersects(d, boundary_sf)
+  #hits <- sf::st_covered_by(d, boundary_sf)
   inside <- lengths(hits) > 0
   
   out$flag <- ifelse(inside, "inside", "outside")
@@ -174,26 +176,19 @@ rFunction <- function(data, polygon, ...) {
     write.csv(flagged_table,file = file.path(artifact_dir, "flagged_points.csv"), row.names = FALSE)
   }
   
-  
+  ################################################
   data_sf <- full_flagged_data
   trck_data <- tryCatch(mt_track_lines(full_flagged_data), error = function(e) NULL)
   
   qc_plot <- ggplot() +
-    geom_sf(data = boundary_sf, fill = "grey85", color = "red", linewidth = 0.6) +
-    geom_sf(
-      data = data_sf,
-      aes(color = factor(within)),
-      size = 0.8,
-      alpha = 0.8
-    ) +
+    geom_sf(data = boundary_sf, fill = "grey85", color = "black", linewidth = 0.4) +
+    geom_sf(data = data_sf,aes(color = factor(within)), size = 0.8, alpha = 0.8 ) +
     scale_color_manual(
-      values = c("0" = "black", "1" = "darkgreen"),
+      values = c("0" = "red", "1" = "darkgreen"),
       labels = c("0" = "Outside", "1" = "Inside"),
       name = "Point status"
     ) +
-    labs(
-      x = "Longitude",
-      y = "Latitude",
+    labs( x = "Longitude",y = "Latitude",
       title = "Geofence classification check"
     ) +
     theme_bw()
@@ -203,14 +198,7 @@ rFunction <- function(data, polygon, ...) {
       geom_sf(data = trck_data, color = "steelblue", linewidth = 0.4, alpha = 0.7)
   }
   
-  ggsave(
-    filename = file.path(Sys.getenv("APP_ARTIFACTS_DIR", tempdir()), "geofence_check.png"),
-    plot = qc_plot,
-    width = 9,
-    height = 6,
-    units = "in",
-    dpi = 300
-  )
+  ggsave(filename = file.path(Sys.getenv("APP_ARTIFACTS_DIR", tempdir()), "geofence_check.png"),plot = qc_plot,  width = 9, height = 6, units = "in", dpi = 300)
   
   return(full_flagged_data)
 }
