@@ -73,7 +73,7 @@ build_flagged_table <- function(d, boundary_sf, track_col) {
       latitude = numeric(0),
       timestamp = character(0),
       flag = character(0),
-      #shape_id = character(0),
+      shape_id = character(0),
       stringsAsFactors = FALSE
     ))
   }
@@ -86,7 +86,7 @@ build_flagged_table <- function(d, boundary_sf, track_col) {
     latitude = xy[, 2],
     timestamp = as.character(mt_time(d)),
     flag = "-",
-    #shape_id = "",
+    shape_id = "",
     stringsAsFactors = FALSE
   )
   
@@ -180,9 +180,15 @@ rFunction <- function(data, polygon, ...) {
   data_sf <- full_flagged_data
   trck_data <- tryCatch(mt_track_lines(full_flagged_data), error = function(e) NULL)
   
+  ##create a label column
+  label_sf <- tryCatch(sf::st_point_on_surface(boundary_sf), error = function(e) NULL)
+  if (!is.null(label_sf) && nrow(label_sf) > 0) {
+    label_sf$poly_label <- paste("Polygon", label_sf$shape_id)
+  }
+  
   qc_plot <- ggplot() +
     geom_sf(data = boundary_sf, fill = "grey85", color = "black", linewidth = 0.4) +
-    geom_sf(data = data_sf,aes(color = factor(within)), size = 0.8, alpha = 0.8 ) +
+    geom_sf(data = data_sf, aes(color = factor(within)), size = 0.8, alpha = 0.8 ) +
     scale_color_manual(
       values = c("0" = "red", "1" = "darkgreen"),
       labels = c("0" = "Outside", "1" = "Inside"),
@@ -193,9 +199,15 @@ rFunction <- function(data, polygon, ...) {
     ) +
     theme_bw()
   
+  
   if (!is.null(trck_data) && nrow(trck_data) > 0) {
     qc_plot <- qc_plot +
       geom_sf(data = trck_data, color = "steelblue", linewidth = 0.4, alpha = 0.7)
+  }
+  
+  if (!is.null(label_sf) && nrow(label_sf) > 0) {
+    qc_plot <- qc_plot +
+      geom_sf_text(data = label_sf, aes(label = poly_label), size = 3)
   }
   
   ggsave(filename = file.path(Sys.getenv("APP_ARTIFACTS_DIR", tempdir()), "geofence_check.png"),plot = qc_plot,  width = 9, height = 6, units = "in", dpi = 300)
