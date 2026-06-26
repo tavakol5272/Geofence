@@ -2,7 +2,6 @@ library(move2)
 library(sf)
 library(ggplot2)
 
-`%||%` <- function(x, y) if (is.null(x)) y else x
 
 ######### Helpers ##############
 
@@ -170,15 +169,10 @@ rFunction <- function(data, polygon, ...) {
   # flagged table artifact
   flagged_table <- build_flagged_table(full_flagged_data, boundary_sf, track_col)
   
-  artifact_dir <- Sys.getenv("APP_ARTIFACTS_DIR", tempdir())
-  
   if (!is.null(flagged_table) && nrow(flagged_table) > 0) {
-    write.csv(flagged_table,file = file.path(artifact_dir, "flagged_points.csv"), row.names = FALSE)
+    write.csv(flagged_table, appArtifactPath("flagged_points.csv"), row.names = FALSE)
   }
   
-  ################################################
-  data_sf <- full_flagged_data
-  trck_data <- tryCatch(mt_track_lines(full_flagged_data), error = function(e) NULL)
   
   ##create a label column
   label_sf <- tryCatch(sf::st_point_on_surface(boundary_sf), error = function(e) NULL)
@@ -210,7 +204,6 @@ rFunction <- function(data, polygon, ...) {
       geom_sf_text(data = label_sf, aes(label = poly_label), size = 3)
   }
   
-  ggsave(filename = file.path(Sys.getenv("APP_ARTIFACTS_DIR", tempdir()), "geofence_check.png"),plot = qc_plot,  width = 9, height = 6, units = "in", dpi = 300)
-  
+  ggsave(appArtifactPath("geofence_check.png"), plot = qc_plot,  width = 9, height = 6, units = "in", dpi = 300)
   return(full_flagged_data)
 }
