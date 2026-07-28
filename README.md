@@ -5,15 +5,18 @@ MoveApps
 Github repository: *https://github.com/nilanjanchatterjee/Geofence*
 
 ## Description
-This app classifies animal tracking locations from a move2 object as inside or outside a user-defined polygon boundary. 
-Users can upload the boundary as either a zipped shapefile (.zip) or a GeoPackage (.gpkg). 
-The app returns the input tracking data with an added within column and generates a plot for checking the result.
+This app classifies animal tracking locations from a move2 object as inside or outside a user-defined polygon boundary. Users can upload the boundary as either a zipped shapefile (.zip) or a GeoPackage (.gpkg).
+
+The app returns the full input tracking dataset with an additional within column. It also generates a CSV file containing the classification results and a PNG plot for visually checking the geofence classification.
 
 ## Documentation
-This app is used to geofence animal tracking data from a move2 object. 
-The user uploads a polygon boundary in either .zip shapefile or .gpkg format. 
-The app then checks each tracking location against the uploaded boundary and classifies it as inside or outside then returns the output dataset with an additional within column(inside, outside) 
-and creates two files; table in CSV and a plot in PNG file showing the uploaded boundary and inside/outside classification.
+This app applies a geofence to animal tracking data stored in a move2 object. The user uploads a polygon(s) boundary in either zipped shapefile (.zip) or GeoPackage (.gpkg) format.
+
+The app checks each tracking location against the uploaded polygon boundary and classifies it as inside or outside. The returned dataset contains an additional within column, in which:
+
+1 indicates that the location is inside and 0 indicates that the location is outside the polygon.
+
+The app also generates a CSV table and a PNG quality-control plot showing the polygon boundary, tracking locations, track lines, and inside/outside classifications.
 
 ### Application scope
 #### Generality of App usability
@@ -36,6 +39,7 @@ The app can generate the following artefacts for download:
 * **flagged_points (.csv):** containing track ID, coordinates, timestamp, flag status(inside/outside), and polygon shape ID.
 * **geofence_check (.png):** showing the uploaded boundary, track lines, point locations, and inside/outside classification
 The QC plot helps users visually confirm whether the geofence classification is correct.
+Some border points may look slightly misplaced in the plot because of point size, but their inside/outside classification is correct in both the plot and the output table.
 
 ### Settings
 
