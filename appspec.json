@@ -1,35 +1,44 @@
 {
   "version": "1.2",
   "settings": [
-    
+    {
+      "id": "boundary_file",
+      "name": "Polygon boundary file",
+      "description": "Optional polygon boundary used when 'Upload area file' is selected in the App and no file is uploaded in the App itself. The App expects either a zipped shapefile (`.zip` containing at least the `.shp`, `.shx`, `.dbf` and `.prj` files) or a GeoPackage (`.gpkg`) with a polygon layer.",
+      "type": "USER_FILE"
+    }
   ],
   "dependencies": {
-  "R": [
-    { "name": "move2" },
-    { "name": "shiny" },
-    { "name": "sf" },
-    { "name": "leaflet" },
-    { "name": "leaflet.extras" },
-    { "name": "htmlwidgets" },
-    { "name": "webshot2" },
-    { "name": "shinycssloaders" },
-    { "name": "shinybusy" },
-    { "name": "jsonlite" }
-  ]
-},
+    "R": [
+      { "name": "shiny" },
+      { "name": "move2" },
+      { "name": "sf" },
+      { "name": "leaflet" },
+      { "name": "leaflet.extras" },
+      { "name": "htmlwidgets" },
+      { "name": "webshot2" },
+      { "name": "jsonlite" },
+      { "name": "shinycssloaders" },
+      { "name": "shinybusy" }
+    ]
+  },
   "license": {
     "key": "MIT"
   },
   "language": "eng",
   "keywords": [
-  "geofence",
-  "polygon boundary",
-  "spatial filtering",
-  "inside outside classification",
-  "move2",
-  "leaflet",
-  "animal tracking"
-],
+    "geofence",
+    "polygon boundary",
+    "spatial filtering",
+    "inside outside classification",
+    "move2",
+    "leaflet",
+    "animal tracking",
+    "shiny",
+    "draw polygon",
+    "shapefile",
+    "geopackage"
+  ],
   "people": [
     {
       "firstName": "Nilanjan",
@@ -46,7 +55,7 @@
       "middleInitials": null,
       "lastName": "Tavakol",
       "email": "ntavakol@ab.mpg.de",
-      "roles": ["contributor"],
+      "roles": ["author", "creator"],
       "orcid": "0000-0003-3674-4784",
       "affiliation": "Max-Planck-Institute of Animal Behavior",
       "affiliationRor": "https://ror.org/026stee22"
